@@ -2,9 +2,10 @@
 #
 
 #    Description: Companion script for Tautulli <https://tautulli.com/> to automatically scrobble media to Trakt.tv.
-#    Contributors: nemchik 
+#    Contributors: nemchik
 #
 #    Copyright (C) 2019 American_Jesus <american.jesus.pt _AT_ gmail _DOT_ com>
+#    Copyright (C) 2019 Benni-chan <https://github.com/Benni-chan/>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -18,7 +19,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#  
+#
 
 ## OS Detection
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -31,7 +32,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 fi
 
 ## App info
-APP_VER=1.1.3
+APP_VER=1.2
 APP_DATE=$(${_date:-date} +%F)
 
 ## Script path and name
@@ -60,18 +61,18 @@ fi
 ######################
 
 scriptSetup() {
-    if [ -z "$TRAKT_APPID" ]; then    
+    if [ -z "$TRAKT_APPID" ]; then
     echo "Enter Trackt.tv 'Client ID'"
     read inputTRAKT_APPID
     echo "TRAKT_APPID=$inputTRAKT_APPID" > "$SCRIPTPATH/$SCRIPTNAME.conf"
     fi
-    
+
     if [ -z "$TRAKT_APPSECRET" ]; then
     echo "Enter Trackt.tv 'Client Secret'"
     read inputTRAKT_APPSECRET
     echo "TRAKT_APPSECRET=$inputTRAKT_APPSECRET" >> "$SCRIPTPATH/$SCRIPTNAME.conf"
     fi
-    
+
     # Source config
     if [ -f "$SCRIPTPATH/$SCRIPTNAME.conf" ]; then
        . "$SCRIPTPATH/$SCRIPTNAME.conf"
@@ -89,9 +90,9 @@ scriptSetup() {
         \"client_id\": \"$TRAKT_APPID\" \
       }" \
       'https://api.trakt.tv/oauth/device/code' > "/tmp/$SCRIPTNAME.tmp"
-      DEVICE_CODE=$(awk -v FS='(device_code\":\"|\",\"user_code)' '{print $2}' /tmp/$SCRIPTNAME.tmp)      
+      DEVICE_CODE=$(awk -v FS='(device_code\":\"|\",\"user_code)' '{print $2}' /tmp/$SCRIPTNAME.tmp)
     fi
-    
+
     # Autorize APP
     if [ -f "/tmp/$SCRIPTNAME.tmp" ]; then
        USER_CODE=$(awk -v FS='(user_code\":\"|\",\"verification_url)' '{print $2}' /tmp/$SCRIPTNAME.tmp)
@@ -109,7 +110,7 @@ scriptSetup() {
          \"client_secret\": \"$TRAKT_APPSECRET\"
     }" \
     'https://api.trakt.tv/oauth/device/token' > "$SCRIPTPATH/$SCRIPTNAME.data"
-    
+
     # Make data file writable by others
     chmod 666 "$SCRIPTPATH/$SCRIPTNAME.data"
     rm /tmp/$SCRIPTNAME.tmp
@@ -139,9 +140,9 @@ refreshToken() {
 
 resetAPP() {
     read -p "This will reset all settings. You sure you want to continue? [yes/N]: " Response
-    
+
     if [ $Response = yes ]; then
-     
+
        if [ -n "$TRAKT_APPTOKEN" ]; then
           curl --slient \
                --request POST \
@@ -153,11 +154,11 @@ resetAPP() {
           }" \
           'https://api.trakt.tv/oauth/revoke'
        fi
-    
+
        if [ -f "$SCRIPTPATH/$SCRIPTNAME.conf" ]; then
           rm "$SCRIPTPATH/$SCRIPTNAME.conf"
        fi
-       
+
        if [ -f "$SCRIPTPATH/$SCRIPTNAME.data" ]; then
           rm "$SCRIPTPATH/$SCRIPTNAME.data"
        fi
@@ -176,7 +177,7 @@ cat << EOF
 --reset             Reset settings and revoke token
 
 -m | --media        Media type (movie, show, episode)
--a | --action       Action (start, pause, stop)
+-a | --action       Action (start, pause, stop, add)
 -s | --showname     Name of the TV Series
 -M | --Moviename    Name of the Moviename
 -y | --year         Year of the movie/TV Show
@@ -226,7 +227,7 @@ case $key in
     YEAR="$2"
     shift # past argument
     shift # past value
-    ;;    
+    ;;
     -S|--Season)
     SEASON="$2"
     shift # past argument
@@ -251,7 +252,7 @@ case $key in
     PROGRESS="$2"
     shift # past argument
     shift # past value
-    ;;    
+    ;;
     --setup)
     scriptSetup
     shift # past argument
@@ -281,70 +282,139 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-##############
-## Scrobble ##
-#############
 
-if [ -n "$MEDIA" ] ; then
+if [[ "$expDATE" -le $(${_date:-date} +%s) ]]; then
+          if [ -w "$SCRIPTPATH/$SCRIPTNAME.data" ]; then
+            refreshToken
+            eval $TRAKT_TOKEN
+          else
+            echo "Error: Unable to write on $SCRIPTNAME.data"
+            exit 1
+          fi
 
-    if [[ "$expDATE" -le $(${_date:-date} +%s) ]]; then
-      if [ -w "$SCRIPTPATH/$SCRIPTNAME.data" ]; then
-        refreshToken
-        eval $TRAKT_TOKEN
-      else
-        echo "Error: Unable to write on $SCRIPTNAME.data"
-        exit 1
-      fi
-      
-    fi
-    
-    if [[ $MEDIA == "movie" ]]; then
-       body="\\\"movie\\\": {
-            \\\"title\\\": \\\"${MOVIENAME}\\\",
-            \\\"year\\\": ${YEAR},
-            \\\"ids\\\": {
-                \\\"imdb\\\": \\\"${IMDB_ID}\\\"
-            }
-        }"
-    elif [[ $MEDIA == "show" ]] || [[ $MEDIA == "episode" ]]; then
-       body="\\\"show\\\": {
-            \\\"title\\\": \\\"${SHOWNAME}\\\",
-            \\\"year\\\": ${YEAR},
-            \\\"ids\\\": {
-                \\\"tvdb\\\": ${TVDB_ID}
-            }
-        },
-        \\\"episode\\\": {
-            \\\"season\\\": ${SEASON},
-            \\\"number\\\": ${EPISODE}
-        }"
-    
-    fi
-    
-   scrobble="$(cat << EOF
-   curl --silent \
-        --request POST \
-        --header "Content-Type: application/json" \
-        --header "Authorization: Bearer $TRAKT_TOKEN" \
-        --header "trakt-api-version: 2" \
-        --header "trakt-api-key: $TRAKT_APPID" \
-        --data-binary "{
-       ${body},
-       \"progress\": ${PROGRESS},
-       \"app_version\": \"${APP_VER}\",
-       \"app_date\": \"${APP_DATE}\"
-   }" 'https://api.trakt.tv/scrobble/${ACTION}' 
+        fi
+
+if [ -n "$ACTION" ] && [ -n "$MEDIA" ]; then
+
+    if [[ $ACTION == "add" ]]; then
+
+        #######################
+        ## Add to Collection ##
+        #######################
+
+        if [[ $MEDIA == "movie" ]]; then
+            body="\\\"movies\\\": [
+                {
+                    \\\"title\\\": \\\"${MOVIENAME}\\\",
+                    \\\"year\\\": ${YEAR},
+                    \\\"ids\\\": {
+                        \\\"imdb\\\": \\\"${IMDB_ID}\\\"
+                    }
+                }
+                ]"
+        elif [[ $MEDIA == "show" ]] || [[ $MEDIA == "episode" ]]; then
+            body="\\\"shows\\\": [
+                    {
+                        \\\"title\\\": \\\"${SHOWNAME}\\\",
+                        \\\"year\\\": ${YEAR},
+                        \\\"ids\\\": {
+                            \\\"tvdb\\\": ${TVDB_ID}
+                        },
+                        \\\"seasons\\\": [
+                            {
+                                \\\"number\\\": ${SEASON},
+                                \\\"episodes\\\": [
+                                    {
+                                        \\\"number\\\": ${EPISODE}
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]"
+        fi
+        #echo $body
+        collectionadd="$(cat <<EOF
+        curl --silent \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --header "Authorization: Bearer $TRAKT_TOKEN" \
+            --header "trakt-api-version: 2" \
+            --header "trakt-api-key: $TRAKT_APPID" \
+            --data-binary "{
+           ${body},
+           \"app_version\": \"${APP_VER}\",
+           \"app_date\": \"${APP_DATE}\"
+        }" 'https://api.trakt.tv/sync/collection'
 EOF
 )"
-   
-   if [ -z "$DEBUG" ]; then
-   
-       echo $scrobble | sh 2>/dev/null 1>&2 
-   
-   elif [ $DEBUG == yes ]; then
-   
-       echo $scrobble > scrobble.sh
-   
-   fi
 
+        if [ -z "$DEBUG" ]; then
+
+            echo $collectionadd | sh 2>/dev/null 1>&2
+
+        elif [ $DEBUG == yes ]; then
+
+            echo $collectionadd > collectionadd.sh
+
+        fi
+
+
+
+    elif [[ $ACTION == "start" ]] || [[ $ACTION == "stop" ]] || [[ $ACTION == "pause" ]]; then
+
+        ##############
+        ## Scrobble ##
+        ##############
+
+        if [[ $MEDIA == "movie" ]]; then
+           body="\\\"movie\\\": {
+                \\\"title\\\": \\\"${MOVIENAME}\\\",
+                \\\"year\\\": ${YEAR},
+                \\\"ids\\\": {
+                    \\\"imdb\\\": \\\"${IMDB_ID}\\\"
+                }
+            }"
+        elif [[ $MEDIA == "show" ]] || [[ $MEDIA == "episode" ]]; then
+           body="\\\"show\\\": {
+                \\\"title\\\": \\\"${SHOWNAME}\\\",
+                \\\"year\\\": ${YEAR},
+                \\\"ids\\\": {
+                    \\\"tvdb\\\": ${TVDB_ID}
+                }
+            },
+            \\\"episode\\\": {
+                \\\"season\\\": ${SEASON},
+                \\\"number\\\": ${EPISODE}
+            }"
+
+        fi
+
+        scrobble="$(cat <<EOF
+        curl --silent \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --header "Authorization: Bearer $TRAKT_TOKEN" \
+            --header "trakt-api-version: 2" \
+            --header "trakt-api-key: $TRAKT_APPID" \
+            --data-binary "{
+           ${body},
+           \"progress\": ${PROGRESS},
+           \"app_version\": \"${APP_VER}\",
+           \"app_date\": \"${APP_DATE}\"
+        }" 'https://api.trakt.tv/scrobble/${ACTION}'
+EOF
+)"
+
+        if [ -z "$DEBUG" ]; then
+
+            echo $scrobble | sh 2>/dev/null 1>&2
+
+        elif [ $DEBUG == yes ]; then
+
+            echo $scrobble > scrobble.sh
+
+        fi
+
+    fi
 fi
