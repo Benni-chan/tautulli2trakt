@@ -67,7 +67,8 @@ Run script for initial setup and follow instructions
 - Playback Stop
 - Playback Pause
 - Playback Resume
-- Watched 
+- Watched
+- Recently Added
 
 #### Arguments
 - Playback Start / Playback Resume :  
@@ -79,6 +80,8 @@ Run script for initial setup and follow instructions
 - Playback Pause :   
 `-m {media_type} -s "{show_name}" -M "{title}" -y "{year}" -t "{thetvdb_id}" -i "{imdb_id}" -S {season_num} -E {episode_num} -P {progress_percent} -a pause`
 
+- Recently Added :   
+`-m {media_type} -s "{show_name}" -M "{title}" -y "{year}" -t "{thetvdb_id}" -i "{imdb_id}" -S {season_num} -E {episode_num} -P {progress_percent} -a add`
 
 ## Usage
 ```
@@ -86,7 +89,7 @@ Run script for initial setup and follow instructions
 --reset             Reset settings and revoke token
 
 -m | --media        Media type (movie, show, episode)
--a | --action       Action (start, pause, stop)
+-a | --action       Action (start, pause, stop, add)
 -s | --showname     Name of the TV Series
 -M | --Moviename    Name of the Moviename
 -y | --year         Year of the movie/TV Show
