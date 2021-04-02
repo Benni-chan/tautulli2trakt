@@ -28,6 +28,7 @@ Companion script for Tautulli to automatically scrobble media to Trakt.tv.
 
 ## Getting Started
 ### Prerequisites
+you need curl installed on your server
 macOS only  
 `brew install coreutils`
 ### Installation 
