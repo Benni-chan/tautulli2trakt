@@ -183,9 +183,10 @@ cat << EOF
 -y | --year         Year of the movie/TV Show
 -S | --season       Season number
 -E | --Episode      Episode number
--d | --TMDB         TMDB ID
+-b | --TMDB         TMDB ID
 -t | --TVDB         TVDB ID
 -i | --IMDB         IMDB ID
+-T | --time         Time/Date for adding to collection
 -P | --progress     Percentage progress (Ex: 10.0)
 -h | --help         This help
 
@@ -259,6 +260,11 @@ case $key in
     shift # past argument
     shift # past value
     ;;
+    -T|--time)
+    TIME="$2"
+    shift # past argument
+    shift # past value
+    ;;
     --setup)
     scriptSetup
     shift # past argument
@@ -326,7 +332,62 @@ if [ -n "$ACTION" ] && [ -n "$MEDIA" ]; then
             body+="}
                 }
                 ]"
-        elif [[ $MEDIA == "show" ]] || [[ $MEDIA == "episode" ]]; then
+        
+        
+        elif [[ $MEDIA == "show" ]]; then
+            body="\\\"shows\\\": [
+                    {"
+                        if [[ -n ${SHOWNAME} ]]; then
+							body+="\\\"title\\\": \\\"${SHOWNAME}\\\","
+						fi
+						if [[ -n ${YEAR} ]]; then
+							body+="\\\"year\\\": ${YEAR},"
+						fi
+						body+="\\\"ids\\\": {"
+						if [[ $TVDB_ID ]]; then
+							body+="\\\"tvdb\\\": ${TVDB_ID}"
+						elif [[ $TMDB_ID ]]; then
+							body+="\\\"tmdb\\\": ${TMDB_ID}"
+						fi
+                        body+="}"
+                        if [[ -n ${TIME} ]]; then
+                            IFS='.'     # hyphen (-) is set as delimiter
+                            read -ra ADDR <<< "$TIME"   # str is read into an array as tokens separated by IFS
+                            IFS=' '     # reset to default value after usage
+                            body+=",\\\"collected_at\\\": \\\"${ADDR[2]}-${ADDR[1]}-${ADDR[0]}T00:00:00.000Z\\\""
+                        fi
+                    body+="}
+                ]"
+        elif [[ $MEDIA == "season" ]]; then
+            body="\\\"shows\\\": [
+                    {"
+                        if [[ -n ${SHOWNAME} ]]; then
+							body+="\\\"title\\\": \\\"${SHOWNAME}\\\","
+						fi
+						if [[ -n ${YEAR} ]]; then
+							body+="\\\"year\\\": ${YEAR},"
+						fi
+						body+="\\\"ids\\\": {"
+						if [[ $TVDB_ID ]]; then
+							body+="\\\"tvdb\\\": ${TVDB_ID}"
+						elif [[ $TMDB_ID ]]; then
+							body+="\\\"tmdb\\\": ${TMDB_ID}"
+						fi
+                        body+="},
+                        \\\"seasons\\\": [
+                            {
+                                \\\"number\\\": ${SEASON}"
+                                if [[ -n ${TIME} ]]; then
+                                    IFS='.'     # hyphen (-) is set as delimiter
+                                    read -ra ADDR <<< "$TIME"   # str is read into an array as tokens separated by IFS
+                                    IFS=' '     # reset to default value after usage
+                                    body+=",\\\"collected_at\\\": \\\"${ADDR[2]}-${ADDR[1]}-${ADDR[0]}T00:00:00.000Z\\\""
+                                fi
+                            body+="}
+                        ]
+                    }
+                ]"
+        elif [[ $MEDIA == "episode" ]]; then
             body="\\\"shows\\\": [
                     {"
                         if [[ -n ${SHOWNAME} ]]; then
@@ -347,8 +408,14 @@ if [ -n "$ACTION" ] && [ -n "$MEDIA" ]; then
                                 \\\"number\\\": ${SEASON},
                                 \\\"episodes\\\": [
                                     {
-                                        \\\"number\\\": ${EPISODE}
-                                    }
+                                        \\\"number\\\": ${EPISODE}"
+                                        if [[ -n ${TIME} ]]; then
+                                            IFS='.'     # hyphen (-) is set as delimiter
+                                            read -ra ADDR <<< "$TIME"   # str is read into an array as tokens separated by IFS
+                                            IFS=' '     # reset to default value after usage
+                                            body+=",\\\"collected_at\\\": \\\"${ADDR[2]}-${ADDR[1]}-${ADDR[0]}T00:00:00.000Z\\\""
+                                        fi
+                                    body+="}
                                 ]
                             }
                         ]
