@@ -1,7 +1,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-  <a href="https://github.com/Generator/tautulli2trakt">
+  <a href="https://github.com/Benni-chan/tautulli2trakt">
     <img src="logo.png" alt="Logo" width="80" height="80">
   </a>
 
@@ -31,7 +31,7 @@ Companion script for Tautulli to automatically scrobble media to Trakt.tv.
 macOS only  
 `brew install coreutils`
 ### Installation 
-    wget -O tautulli2trakt.sh https://raw.githubusercontent.com/Generator/tautulli2trakt/master/tautulli2trakt.sh
+    wget -O tautulli2trakt.sh https://raw.githubusercontent.com/Benni-chan/tautulli2trakt/master/tautulli2trakt.sh
     chmod +x tautulli2trakt.sh
 
 ### Script Setup
@@ -72,16 +72,16 @@ Run script for initial setup and follow instructions
 
 #### Arguments
 - Playback Start / Playback Resume :  
-`-m {media_type} -s "{show_name}" -M "{title}" -y "{year}" -t "{thetvdb_id}" -i "{imdb_id}" -S {season_num} -E {episode_num} -P {progress_percent} -a start`  
+`-m {media_type} <movie>-i {imdb_id} </movie><episode>-t {thetvdb_id} -S {season_num} -E {episode_num} </episode>-P {progress_percent} -a start`
 
 - Playback Stop / Watched :  
-`-m {media_type} -s "{show_name}" -M "{title}" -y "{year}" -t "{thetvdb_id}" -i "{imdb_id}" -S {season_num} -E {episode_num} -P {progress_percent} -a stop` 
+`-m {media_type} <movie>-i {imdb_id} </movie><episode>-t {thetvdb_id} -S {season_num} -E {episode_num} </episode>-P {progress_percent} -a stop` 
 
 - Playback Pause :   
-`-m {media_type} -s "{show_name}" -M "{title}" -y "{year}" -t "{thetvdb_id}" -i "{imdb_id}" -S {season_num} -E {episode_num} -P {progress_percent} -a pause`
+`-m {media_type} <movie>-i {imdb_id} </movie><episode>-t {thetvdb_id} -S {season_num} -E {episode_num} </episode>-P {progress_percent} -a pause`
 
 - Recently Added :   
-`-m {media_type} -s "{show_name}" -M "{title}" -y "{year}" -t "{thetvdb_id}" -i "{imdb_id}" -S {season_num} -E {episode_num} -P {progress_percent} -a add`
+`-m {media_type} <movie>-i {imdb_id} </movie><episode>-t {thetvdb_id} -S {season_num} -E {episode_num}</episode><season>-t {thetvdb_id} -S {season_num} -E {episode_num}</season><show>-t {thetvdb_id} -S {season_num}</show>-a add `
 
 ## Usage
 ```
@@ -95,6 +95,7 @@ Run script for initial setup and follow instructions
 -y | --year         Year of the movie/TV Show
 -S | --season       Season number
 -E | --Episode      Episode number
+-b | --TMDB         TMDB ID
 -t | --TVDB         TVDB ID
 -i | --IMDB         IMDB ID
 -P | --progress     Percentage progress (Ex: 10.0)
@@ -102,11 +103,12 @@ Run script for initial setup and follow instructions
 ```
 
 ## FAQ & Troubleshooting
-* [Frequently Asked Questions](https://github.com/Generator/tautulli2trakt/wiki/Frequently-Asked-Questions)  
-* [Troubleshooting](https://github.com/Generator/tautulli2trakt/wiki/Troubleshooting)
+* [Frequently Asked Questions](https://github.com/Benni-chan/tautulli2trakt/wiki/Frequently-Asked-Questions)  
+* [Troubleshooting](https://github.com/Benni-chan/tautulli2trakt/wiki/Troubleshooting)
 
 ## License
 Distributed under the GPL License.
+Original Author: https://github.com/Generator/tautulli2trakt
 
 ## Similar Projects 
 
