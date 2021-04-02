@@ -183,7 +183,7 @@ cat << EOF
 -y | --year         Year of the movie/TV Show
 -S | --season       Season number
 -E | --Episode      Episode number
--b | --TMDB         TMDB ID
+-d | --TMDB         TMDB ID
 -t | --TVDB         TVDB ID
 -i | --IMDB         IMDB ID
 -P | --progress     Percentage progress (Ex: 10.0)
@@ -310,22 +310,38 @@ if [ -n "$ACTION" ] && [ -n "$MEDIA" ]; then
 
         if [[ $MEDIA == "movie" ]]; then
             body="\\\"movies\\\": [
-                {
-                    \\\"title\\\": \\\"${MOVIENAME}\\\",
-                    \\\"year\\\": ${YEAR},
-                    \\\"ids\\\": {
-                        \\\"imdb\\\": \\\"${IMDB_ID}\\\"
-                    }
+                {"
+			if [[ -n ${MOVIENAME} ]]; then
+                body+="\\\"title\\\": \\\"${MOVIENAME}\\\","
+            fi
+            if [[ -n ${YEAR} ]]; then
+                body+="\\\"year\\\": ${YEAR},"
+            fi
+            body+="\\\"ids\\\": {"
+            if [[ $IMDB_ID ]]; then
+                body+="\\\"imdb\\\": \\\"${IMDB_ID}\\\""
+            elif [[ $TMDB_ID ]]; then
+                body+="\\\"tmdb\\\": \\\"${TMDB_ID}\\\""
+            fi
+            body+="}
                 }
                 ]"
         elif [[ $MEDIA == "show" ]] || [[ $MEDIA == "episode" ]]; then
             body="\\\"shows\\\": [
-                    {
-                        \\\"title\\\": \\\"${SHOWNAME}\\\",
-                        \\\"year\\\": ${YEAR},
-                        \\\"ids\\\": {
-                            \\\"tvdb\\\": ${TVDB_ID}
-                        },
+                    {"
+                        if [[ -n ${SHOWNAME} ]]; then
+							body+="\\\"title\\\": \\\"${SHOWNAME}\\\","
+						fi
+						if [[ -n ${YEAR} ]]; then
+							body+="\\\"year\\\": ${YEAR},"
+						fi
+						body+="\\\"ids\\\": {"
+						if [[ $TVDB_ID ]]; then
+							body+="\\\"tvdb\\\": ${TVDB_ID}"
+						elif [[ $TMDB_ID ]]; then
+							body+="\\\"tmdb\\\": ${TMDB_ID}"
+						fi
+                        body+="},
                         \\\"seasons\\\": [
                             {
                                 \\\"number\\\": ${SEASON},
@@ -373,50 +389,42 @@ EOF
         ## Scrobble ##
         ##############
 
-        if [[ $MEDIA == "movie" ]]; then
-           if [[ $IMDB_ID ]]; then
-                body="\\\"movie\\\": {
-                    \\\"title\\\": \\\"${MOVIENAME}\\\",
-                    \\\"year\\\": ${YEAR},
-                    \\\"ids\\\": {
-                        \\\"imdb\\\": \\\"${IMDB_ID}\\\"
-                    }
-                }"
-            elif [[ $TMDB_ID ]]; then
-                body="\\\"movie\\\": {
-                    \\\"title\\\": \\\"${MOVIENAME}\\\",
-                    \\\"year\\\": ${YEAR},
-                    \\\"ids\\\": {
-                        \\\"imdb\\\": \\\"${IMDB_ID}\\\"
-                    }
-                }"
+        if [[ $MEDIA == "movie" ]]; then           
+            body="\\\"movie\\\": {"
+            if [[ -n ${MOVIENAME} ]]; then
+                body+="\\\"title\\\": \\\"${MOVIENAME}\\\","
             fi
+            if [[ -n ${YEAR} ]]; then
+                body+="\\\"year\\\": ${YEAR},"
+            fi
+            body+="\\\"ids\\\": {"
+            if [[ $IMDB_ID ]]; then
+                body+="\\\"imdb\\\": \\\"${IMDB_ID}\\\""
+            elif [[ $TMDB_ID ]]; then
+                body+="\\\"tmdb\\\": \\\"${TMDB_ID}\\\""
+            fi
+            body+="}
+            }"
         elif [[ $MEDIA == "show" ]] || [[ $MEDIA == "episode" ]]; then
-           if [[ $TVDB_ID ]]; then
-                body="\\\"show\\\": {
-                    \\\"title\\\": \\\"${SHOWNAME}\\\",
-                    \\\"year\\\": ${YEAR},
-                    \\\"ids\\\": {
-                        \\\"tvdb\\\": ${TVDB_ID}
-                    }
-                },
-                \\\"episode\\\": {
-                    \\\"season\\\": ${SEASON},
-                    \\\"number\\\": ${EPISODE}
-                }"
-            elif [[ $TMDB_ID ]]; then
-                body="\\\"show\\\": {
-                      \\\"title\\\": \\\"${SHOWNAME}\\\",
-                      \\\"year\\\": ${YEAR},
-                      \\\"ids\\\": {
-                          \\\"tmdb\\\": ${TMDB_ID}
-                      }
-                  },
-                  \\\"episode\\\": {
-                      \\\"season\\\": ${SEASON},
-                      \\\"number\\\": ${EPISODE}
-                  }"
+            body="\\\"show\\\": {"
+            if [[ -n ${SHOWNAME} ]]; then
+                body+="\\\"title\\\": \\\"${SHOWNAME}\\\","
             fi
+            if [[ -n ${YEAR} ]]; then
+                body+="\\\"year\\\": ${YEAR},"
+            fi
+            body+="\\\"ids\\\": {"
+            if [[ $TVDB_ID ]]; then
+                body+="\\\"tvdb\\\": ${TVDB_ID}"
+            elif [[ $TMDB_ID ]]; then
+                body+="\\\"tmdb\\\": ${TMDB_ID}"
+            fi
+            body+="}
+            },
+            \\\"episode\\\": {
+                \\\"season\\\": ${SEASON},
+                \\\"number\\\": ${EPISODE}
+                }"
         fi
 
         scrobble="$(cat <<EOF
@@ -446,4 +454,5 @@ EOF
         fi
 
     fi
+
 fi
